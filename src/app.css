@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@plugin "@iconify/tailwind4";
+
+@theme {
+  --color-theme-main-light: #606c38;
+  --color-theme-main-dark: #283618;
+  --color-theme-background-light: #fefae0;
+  --color-theme-secondary-light: #dda15e;
+  --color-theme-secondary-dark: #bc6c25;
+}
+
+@plugin "@iconify/tailwind4" {
+ prefix: "icon";
+ scale: 1.5;
+}

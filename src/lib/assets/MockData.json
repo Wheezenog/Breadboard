@@ -1,0 +1,62 @@
+{
+  "reviews": [
+    {
+      "id": 1,
+      "title": "Best breadsticks in town!",
+      "content": "These breadsticks were perfectly crispy on the outside and soft on the inside. The garlic butter was amazing.",
+      "rating": 5,
+      "user_id": 101,
+      "location": "Tony's Italian Bistro"
+    },
+    {
+      "id": 2,
+      "title": "Too salty for my taste",
+      "content": "While the texture was good, I found these breadsticks to be overly salted. Could barely taste the herbs.",
+      "rating": 2,
+      "user_id": 102,
+      "location": "Breadstick Heaven"
+    },
+    {
+      "id": 3,
+      "title": "Decent but nothing special",
+      "content": "Average breadsticks. Not bad, but I've had better at other restaurants. Would eat again if they were free.",
+      "rating": 3,
+      "user_id": 103,
+      "location": "The Carb Shop"
+    },
+    {
+      "id": 4,
+      "title": "Olive Garden vibes",
+      "content": "Reminded me of classic Olive Garden breadsticks. Warm, buttery, and unlimited - what more could you want?",
+      "rating": 4,
+      "user_id": 101,
+      "location": "Pasta Palace"
+    },
+    {
+      "id": 5,
+      "title": "Stale and disappointing",
+      "content": "These tasted like they were from yesterday. Hard and dry. Not worth the money at all.",
+      "rating": 1,
+      "user_id": 104,
+      "location": "Quick Bites Cafe"
+    }
+  ],
+  "users": [
+    {
+      "id": 101,
+      "username": "breadlover23"
+    },
+    {
+      "id": 102,
+      "username": "foodcritic_sarah"
+    },
+    {
+      "id": 103,
+      "username": "carb_enthusiast"
+    },
+    {
+      "id": 104,
+      "username": "hungry_hippo"
+    }
+  ]
+}

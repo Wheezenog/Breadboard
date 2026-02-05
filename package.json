@@ -16,6 +16,7 @@
 	"devDependencies": {
 		"@eslint/compat": "^2.0.1",
 		"@eslint/js": "^9.39.2",
+		"@iconify/tailwind4": "^1.2.1",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.50.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
@@ -33,6 +34,9 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
-		"bits-ui": "^2.15.4"
+		"@iconify-json/solar": "^1.2.5",
+		"@tailwindcss/vite": "^4.1.18",
+		"bits-ui": "^2.15.4",
+		"tailwindcss": "^4.1.18"
 	}
 }
