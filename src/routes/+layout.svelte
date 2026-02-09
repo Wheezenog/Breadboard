@@ -35,10 +35,14 @@
 					class="flex flex-col border-muted bg-white shadow-popover outline-hidden focus-visible:outline-hidden w-[229px] rounded-xl border px-4 py-2 gap-2"
 					sideOffset={8}
 				>
-					<DropdownMenu.Item class="flex items-center gap-2"><span class="icon-[solar--user-linear]"></span>View Profile</DropdownMenu.Item>
-					<DropdownMenu.Item class="flex items-center gap-2"
-						><span class="icon-[solar--settings-linear]"></span>Settings</DropdownMenu.Item
-					>
+					<DropdownMenu.Item class="flex items-center gap-2">
+						<span class="icon-[solar--user-linear]"></span>
+						<a href="/account">View Profile</a>
+					</DropdownMenu.Item>
+					<DropdownMenu.Item class="flex items-center gap-2">
+						<span class="icon-[solar--settings-linear]"></span><a href="/account/settings"
+							>Settings</a>
+					</DropdownMenu.Item>
 					<DropdownMenu.Item class="flex items-center gap-2"
 						><span class="icon-[solar--logout-2-outline]"></span>Log Out</DropdownMenu.Item
 					></DropdownMenu.Content
