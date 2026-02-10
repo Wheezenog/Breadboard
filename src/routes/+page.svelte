@@ -1,12 +1,12 @@
 <script lang="ts">
 	import data from '$lib/MockData.json';
-	import { Avatar, RatingGroup } from 'bits-ui';
+	import { Avatar } from 'bits-ui';
 </script>
 
-<div class="flex flex-col items-center">
+<div class="flex flex-col items-center justify-center mt-8">
 	{#each data.reviews as review}
-		<div class="min-w-sm max-w-lg rounded-xl border-1 border-slate-500 p-4 m-8 shadow-md">
-			<div class="flex flexrow items-center py-2">
+		<div class="min-w-sm max-w-lg rounded-xl border-1 border-slate-500 p-4 m-8 shadow-md w-full">
+			<div class="flex flexrow items-center py-2 gap-4">
 				<Avatar.Root class="mr-2">
 					<div>
 						<Avatar.Fallback
@@ -26,9 +26,9 @@
 						>
 					</div>
 				</Avatar.Root>
-				<div class="flex flex-col">
+				<div class="flex flex-col items-start">
 					<p class="text-base">{data.users.find((u) => u.id === review.user_id)?.username}</p>
-					<div class="flex items-center flex-row py-2">
+					<div class="flex items-center flex-row py-2 gap-1">
 						<span class="icon-[solar--map-point-bold] mr-1 text-xs"></span>
 						<p class="text-xs">
 							{review.location}
