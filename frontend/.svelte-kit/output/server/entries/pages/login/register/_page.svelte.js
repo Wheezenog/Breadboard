@@ -1,0 +1,7 @@
+import "clsx";
+function _page($$renderer) {
+  $$renderer.push(`<div class="flex flex-col items-center justify-center mt-12"><h1 class="text-2xl font-bold mb-6">Create an Account</h1> <div class="w-full max-w-sm p-6 rounded-lg shadow-md border border-gray-300"><form class="w-full max-w-sm py-4"><input type="text" placeholder="Email" class="border border-gray-300 p-2 rounded mb-4 w-full focus:outline-none focus:border-orange-400"/> <input type="text" placeholder="Username" class="border border-gray-300 p-2 rounded mb-4 w-full focus:outline-none focus:border-orange-400"/> <input type="password" placeholder="Password" class="border border-gray-300 p-2 rounded mb-4 w-full focus:outline-none focus:border-orange-400"/> <button type="submit" class="bg-orange-400 text-white p-2 rounded w-full hover:bg-orange-500">Sign Up</button> <p class="text-sm mt-4">Already have an account? <a href="/login" class="text-orange-400 hover:text-orange-500">Log In</a></p></form> <div class="flex flex-col"><div class="flex items-center my-4"><hr class="flex-grow border-t border-gray-300"/> <span class="mx-4 text-gray-500">or</span> <hr class="flex-grow border-t border-gray-300"/></div></div> <button class="bg-white border border-gray-300 text-gray-700 p-2 rounded w-full hover:bg-gray-100 mt-2">Continue with Google</button> <button class="bg-gray-800 text-white p-2 rounded w-full hover:bg-gray-900 mt-2">Continue with GitHub</button></div></div>`);
+}
+export {
+  _page as default
+};
