@@ -1,5 +1,5 @@
 <div class="flex flex-col items-center justify-center mt-12">
-  <h1 class="text-2xl font-bold mb-6">Create an Account</h1>
+	<h1 class="text-2xl font-bold mb-6">Create an Account</h1>
 	<div class="w-full max-w-sm p-6 rounded-lg shadow-md border border-gray-300">
 		<form class="w-full max-w-sm py-4">
 			<input
@@ -33,11 +33,11 @@
 			</div>
 		</div>
 		<button
-			class="bg-white border border-gray-300 text-gray-700 p-2 rounded w-full hover:bg-gray-100 mt-2"
-			>Continue with Google</button
+			class="bg-white border border-gray-300 text-gray-700 p-2 rounded w-full hover:bg-gray-100 mt-2 flex flex-row items-center justify-center gap-2"
+			>Continue with Google <span class="icon-[logos--google-icon] text-lg"></span></button
 		>
-		<button class="bg-gray-800 text-white p-2 rounded w-full hover:bg-gray-900 mt-2"
-			>Continue with GitHub</button
+		<button class="bg-white border border-gray-300 text-gray-700 p-2 rounded w-full hover:bg-gray-100 mt-2 flex flex-row items-center justify-center gap-2"
+			>Continue with GitHub <span class="icon-[logos--github-icon] text-lg"></span></button
 		>
 	</div>
 </div>
