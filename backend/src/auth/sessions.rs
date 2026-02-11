@@ -86,15 +86,10 @@ pub fn hash_secret(secret: &str) -> Vec<u8> {
     secret_hash_buffer.to_vec()
 }
 
-pub async fn validate_session_token(client: &Client, token: &str) -> SessionWithToken {
+pub async fn validate_session_token(client: &Client, token: &str) -> Option<Session> {
     let token_parts: Vec<&str> = token.split('.').collect();
     if token_parts.len() != 2 {
-        return SessionWithToken {
-            id: String::new(),
-            secret_hash: Vec::new(),
-            created_at: 0,
-            token: String::new(),
-        };
+        return None;
     }
 
     let session_id = token_parts[0];
@@ -107,27 +102,12 @@ pub async fn validate_session_token(client: &Client, token: &str) -> SessionWith
         let valid_secret = constant_time_eq(&token_secret_hash, &session.secret_hash);
 
         if valid_secret {
-            return SessionWithToken {
-                id: session.id,
-                secret_hash: session.secret_hash,
-                created_at: session.created_at,
-                token: token.to_string(),
-            };
+            return Some(session);
         } else {
-            return SessionWithToken {
-                id: String::new(),
-                secret_hash: Vec::new(),
-                created_at: 0,
-                token: String::new(),
-            };
+            return None;
         }
     } else {
-        return SessionWithToken {
-            id: String::new(),
-            secret_hash: Vec::new(),
-            created_at: 0,
-            token: String::new(),
-        };
+        return None;
     }
 }
 
@@ -144,7 +124,88 @@ pub async fn get_session(client: &Client, session_id: &str) -> Option<Session> {
         .send()
         .await;
 
+    if let Ok(output) = result {
+        // Not errored
+        if let Some(items) = output.items {
+            // Items exist
+            for item in items {
+                if let Some(session_av) = item.get("session") {
+                    if let AttributeValue::M(session_map) = session_av {
+                        if let Some(AttributeValue::S(id)) = session_map.get("id") {
+                            if id == session_id {
+                                // Found the session
+                                let secret_hash = if let Some(AttributeValue::S(secret_hash_str)) =
+                                    session_map.get("secret_hash")
+                                {
+                                    // Split returns a proper iterator of &str, so we can filter_map and collect into a Vec<u8>
+                                    // The has will not contain a comma, so the split will return an iterator with one element, which is the original string
+                                    secret_hash_str
+                                        .split(',')
+                                        .filter_map(|s| s.parse::<u8>().ok())
+                                        .collect()
+                                } else {
+                                    return None;
+                                };
+                                let created_at = if let Some(AttributeValue::N(created_at_str)) =
+                                    session_map.get("created_at")
+                                {
+                                    created_at_str.parse::<i64>().unwrap_or(0)
+                                } else {
+                                    0
+                                };
+                                return Some(Session {
+                                    id: id.clone(),
+                                    secret_hash,
+                                    created_at,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     None
+}
+
+pub async fn delete_session(client: &Client, session_id: &str) -> bool {
+    // Similar to get_session, we need to find the user that has the session with the given ID, and then remove that session from the user's sessions
+    let result = client
+        .scan()
+        .table_name("users")
+        .filter_expression("contains(sessions, :session_id)")
+        .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
+        .send()
+        .await;
+
+    if let Ok(output) = result {
+        if let Some(items) = output.items {
+            for item in items {
+                if let Some(session_av) = item.get("session") {
+                    if let AttributeValue::M(session_map) = session_av {
+                        if let Some(AttributeValue::S(id)) = session_map.get("id") {
+                            if id == session_id {
+                                // Found the session, now we need to remove it from the user's sessions
+                                let key = HashMap::from([(
+                                    "uuid".to_string(),
+                                    item.get("uuid").unwrap().clone(),
+                                )]);
+                                let _ = client
+                                    .update_item()
+                                    .table_name("users")
+                                    .set_key(Some(key))
+                                    .update_expression("REMOVE session")
+                                    .send()
+                                    .await;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 /// Constant time comparison of two byte slices to prevent timing attacks
