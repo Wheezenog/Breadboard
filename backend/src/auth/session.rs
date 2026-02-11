@@ -1,5 +1,6 @@
 use crate::types::{Session, SessionWithToken};
 use aws_sdk_dynamodb::{Client, types::AttributeValue};
+use axum_extra::extract::cookie::{Cookie, Expiration};
 use sha2::{Digest, Sha256};
 use std::{collections::HashMap, time::SystemTime};
 
@@ -29,6 +30,7 @@ pub async fn create_session(client: &Client, user_id: &str) -> Option<SessionWit
     let id = generate_secure_random_string();
     let secret = generate_secure_random_string();
     let secret_hash = hash_secret(&secret);
+    let expires_at = now + 60 * 60 * 24 * 7; // 7 days from now
 
     let token = format!("{}.{}", id, secret);
 
@@ -36,6 +38,7 @@ pub async fn create_session(client: &Client, user_id: &str) -> Option<SessionWit
         id,
         secret_hash,
         created_at: now as i64,
+        expires_at: expires_at as i64,
         token,
     };
 
@@ -67,6 +70,7 @@ pub async fn create_session(client: &Client, user_id: &str) -> Option<SessionWit
 
     let key = HashMap::from([("uuid".to_string(), AttributeValue::S(user_id.to_string()))]);
 
+    // Add session to db
     let _ = client
         .update_item()
         .table_name("users")
@@ -153,10 +157,19 @@ pub async fn get_session(client: &Client, session_id: &str) -> Option<Session> {
                                 } else {
                                     0
                                 };
+
+                                let expires_at = if let Some(AttributeValue::N(expires_at_str)) =
+                                    session_map.get("expires_at")
+                                {
+                                    expires_at_str.parse::<i64>().unwrap_or(0)
+                                } else {
+                                    0
+                                };
                                 return Some(Session {
                                     id: id.clone(),
                                     secret_hash,
                                     created_at,
+                                    expires_at,
                                 });
                             }
                         }
