@@ -37,7 +37,7 @@
 				</div>
 			</div>
 			{#each { length: 5 }, i}
-				{#if i <= review.rating}
+				{#if (i + 1) <= review.rating}
 					<span class="icon-[solar--star-bold] text-[#ffa500]"></span>
 				{:else}
 					<span class="icon-[solar--star-outline] text-[#ffa500]"></span>
