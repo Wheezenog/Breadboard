@@ -3,6 +3,7 @@ pub struct User {
     pub username: String,
     pub email: String,
     pub password_hash: String,
+    pub session: Session,
 }
 
 pub struct Session {
