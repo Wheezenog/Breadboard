@@ -1,21 +1,21 @@
+pub mod auth;
+pub mod types;
+pub mod api;
+
 use aws_config::{BehaviorVersion, load_defaults};
 use aws_sdk_dynamodb::Client;
 use axum::{
     Router,
-    extract::State,
     http::{
-        HeaderValue, StatusCode,
+        HeaderValue,
         header::{AUTHORIZATION, CONTENT_TYPE},
     },
-    response::IntoResponse,
     routing::get,
 };
 use std::sync::Arc;
 use tokio;
 use tower_http::cors::{Any, CorsLayer};
 
-pub mod auth;
-pub mod types;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shared_config = load_defaults(BehaviorVersion::latest()).await;
@@ -38,14 +38,9 @@ fn app(client: Arc<Client>) -> Router {
 
     Router::new()
         .route("/api", get(|| async { "Hello from the backend!" }))
-        .route("/api/tables", get(hello))
-        .with_state(client)
-        .layer(cors_layer)
+        .route(
+            "/api/validate-session",
+            get(api::session::validate_session).with_state(client).layer(cors_layer),
+        )
 }
 
-async fn hello(State(client): State<Arc<Client>>) -> impl IntoResponse {
-    match client.list_tables().send().await {
-        Ok(tables) => (StatusCode::OK, tables.table_names.unwrap().join(",")).into_response(),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "error").into_response(),
-    }
-}

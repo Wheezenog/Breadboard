@@ -1,7 +1,10 @@
+use serde::Serialize;
+
 pub struct User {
     pub username: String,
 }
 
+#[derive(Serialize)]
 pub struct Session {
     pub id: String,
     pub secret_hash: Vec<u8>,
@@ -15,4 +18,10 @@ pub struct SessionWithToken {
     pub created_at: i64,
     pub expires_at: i64,
     pub token: String,
+}
+
+#[derive(Serialize)]
+pub struct SessionValidationResult {
+    pub session: Option<Session>,
+    pub user: Option<String>,
 }

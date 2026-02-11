@@ -1,3 +1,4 @@
-mod session;
-mod user;
-mod password;
+pub mod session;
+pub mod user;
+pub mod password;
+pub mod verification;

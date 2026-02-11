@@ -1,4 +1,4 @@
-use crate::types::{Session, SessionWithToken};
+use crate::types::{Session, SessionValidationResult, SessionWithToken, User};
 use aws_sdk_dynamodb::{Client, types::AttributeValue};
 use axum_extra::extract::cookie::{Cookie, Expiration};
 use sha2::{Digest, Sha256};
@@ -90,7 +90,10 @@ pub fn hash_secret(secret: &str) -> Vec<u8> {
     secret_hash_buffer.to_vec()
 }
 
-pub async fn validate_session_token(client: &Client, token: &str) -> Option<Session> {
+pub async fn validate_session_token(
+    client: &Client,
+    token: &str,
+) -> Option<SessionValidationResult> {
     let token_parts: Vec<&str> = token.split('.').collect();
     if token_parts.len() != 2 {
         return None;
@@ -106,7 +109,10 @@ pub async fn validate_session_token(client: &Client, token: &str) -> Option<Sess
         let valid_secret = constant_time_eq(&token_secret_hash, &session.secret_hash);
 
         if valid_secret {
-            return Some(session);
+            return Some(SessionValidationResult {
+                session: Some(session),
+                user: get_user_from_session(client, session_id).await,
+            });
         } else {
             return None;
         }
@@ -219,6 +225,36 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
         }
     }
     false
+}
+
+pub async fn get_user_from_session(client: &Client, session_id: &str) -> Option<String> {
+    let result = client
+        .scan()
+        .table_name("users")
+        .filter_expression("contains(sessions, :session_id)")
+        .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
+        .send()
+        .await;
+
+    if let Ok(output) = result {
+        if let Some(items) = output.items {
+            for item in items {
+                if let Some(session_av) = item.get("session") {
+                    if let AttributeValue::M(session_map) = session_av {
+                        if let Some(AttributeValue::S(id)) = session_map.get("id") {
+                            if id == session_id {
+                                // Found the session, now we need to return the user's username
+                                if let Some(AttributeValue::S(username)) = item.get("username") {
+                                    return Some(username.clone());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Constant time comparison of two byte slices to prevent timing attacks
