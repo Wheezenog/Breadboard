@@ -29,31 +29,28 @@ pub async fn create_session(client: &Arc<Client>, username: String) -> Option<Se
     let id = generate_secure_random_string();
     let secret = generate_secure_random_string();
     let secret_hash = hash_secret(&secret);
-    let expires_at = now + 60 * 60 * 24 * 7; // 7 days from now
+    let expires_at = now + 60 * 60 * 24 * 7;
 
     let token = format!("{}.{}", id, secret);
 
     let session: SessionWithToken = SessionWithToken {
-        id,
-        secret_hash,
+        id: id.clone(),
+        secret_hash: secret_hash.clone(),
         created_at: now as i64,
         expires_at: expires_at as i64,
-        token,
+        token: token.clone(),
     };
 
-    // Add / replace session object under the user table with the user that has the same id
-
     let session_map = HashMap::from([
-        ("id".to_string(), AttributeValue::S(session.id.clone())),
+        ("id".to_string(), AttributeValue::S(id)),
         (
             "secret_hash".to_string(),
             AttributeValue::S(
-                session
-                    .secret_hash
-                    .clone()
+                secret_hash
                     .iter()
-                    .map(|n| n.to_string())
-                    .collect(),
+                    .map(|b| b.to_string())
+                    .collect::<Vec<_>>()
+                    .join(","),
             ),
         ),
         (
@@ -61,28 +58,28 @@ pub async fn create_session(client: &Arc<Client>, username: String) -> Option<Se
             AttributeValue::N(session.created_at.to_string()),
         ),
         (
-            "token".to_string(),
-            AttributeValue::S(session.token.clone()),
+            "expires_at".to_string(),
+            AttributeValue::N(session.expires_at.to_string()),
         ),
     ]);
+
     let session_av = AttributeValue::M(session_map);
+    let key = HashMap::from([("username".to_string(), AttributeValue::S(username.clone()))]);
 
-    let key = HashMap::from([(
-        "username".to_string(),
-        AttributeValue::S(username.to_string()),
-    )]);
-
-    // Add session to db
-    let _ = client
+    let response = client
         .update_item()
         .table_name("Users")
         .set_key(Some(key))
-        .update_expression("SET session = :session")
+        .update_expression("SET #session = :session")
+        .expression_attribute_names("#session", "session")
         .expression_attribute_values(":session", session_av)
         .send()
         .await;
 
-    Some(session)
+    match response {
+        Ok(_) => Some(session),
+        Err(_) => None,
+    }
 }
 
 /// Hashes the session secret using a secure hashing algorithm
@@ -131,7 +128,7 @@ pub async fn get_session(client: &Client, session_id: &str) -> Option<Session> {
     let result = client
         .scan()
         .table_name("Users")
-        .filter_expression("contains(sessions, :session_id)")
+        .filter_expression("session.id = :session_id")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()
         .await;
