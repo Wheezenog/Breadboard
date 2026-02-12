@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use crate::{
     auth::password::{hash_password, verify_password},
     types::User,
 };
 use aws_sdk_dynamodb::{Client, types::AttributeValue};
 
-pub async fn create_user(client: &Client, username: &str, password: &str) -> Option<User> {
+pub async fn create_user(client: &Arc<Client>, username: String, password: String) -> Option<User> {
     let password_hash = hash_password(password);
 
     let username_av = AttributeValue::S(username.to_string());

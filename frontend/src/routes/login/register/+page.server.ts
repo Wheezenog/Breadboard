@@ -18,5 +18,5 @@ async function action(event: RequestEvent) {
     body: JSON.stringify({ username, password })
   });
 
-  const data = await result.json();
+  const sessionToken = await result.json();
 }
