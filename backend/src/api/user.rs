@@ -1,19 +1,27 @@
-use crate::{
-    auth::{
-        session::create_session,
-        user::create_user,
-        verification::{verify_password_strength, verify_username},
-    },
+use crate::auth::{
+    password::hash_password,
+    session::create_session,
+    user::{create_user, get_user_by_username},
+    verification::{verify_password_strength, verify_username},
 };
 use aws_sdk_dynamodb::Client;
-use axum::{extract::State, http::StatusCode, response::IntoResponse};
+use axum::{self, Json, extract::State, http::StatusCode, response::IntoResponse};
 use std::sync::Arc;
 
-async fn register_user(
-    State(client): State<Arc<Client>>,
+#[derive(serde::Deserialize)]
+pub struct UserRequest {
     username: String,
     password: String,
+}
+
+#[axum::debug_handler]
+pub async fn register_user(
+    State(client): State<Arc<Client>>,
+    Json(payload): Json<UserRequest>,
 ) -> impl IntoResponse {
+    let username = payload.username;
+    let password = payload.password;
+
     // Verify username availability
     if verify_username(&client, &username).await {
         return (
@@ -31,11 +39,10 @@ async fn register_user(
 
     match user {
         Some(user) => {
-            let session = create_session(&client, &user.username).await;
+            let session = create_session(&client, user.username).await;
 
             if let Some(session) = session {
-                // Set session cookie or return session token as needed
-                // For example, you could return the session token in the response body
+                // return the session token so the frontend can set the cookie
                 return (StatusCode::OK, session.token.to_string());
             } else {
                 return (
@@ -51,4 +58,31 @@ async fn register_user(
             );
         }
     }
+}
+
+pub async fn login_user(
+    State(client): State<Arc<Client>>,
+    Json(payload): Json<UserRequest>,
+) -> impl IntoResponse {
+    let username = payload.username;
+    let password = payload.password;
+
+    let password_hash = hash_password(password);
+
+    let user = get_user_by_username(&client, username).await;
+
+    if let Some(user) = user {
+        if let Some(hash) = password_hash {
+            if hash == hash {
+                let session = create_session(&client, user.username).await;
+                if let Some(session) = session {
+                    return (StatusCode::OK, session.token.to_string());
+                }
+            }
+        }
+    }
+    (
+        StatusCode::UNAUTHORIZED,
+        "Invalid username or password".to_string(),
+    )
 }

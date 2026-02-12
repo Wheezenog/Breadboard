@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-    auth::password::{hash_password, verify_password},
-    types::User,
-};
+use crate::{auth::password::hash_password, types::{User, UserWithPassword}};
 use aws_sdk_dynamodb::{Client, types::AttributeValue};
 
 pub async fn create_user(client: &Arc<Client>, username: String, password: String) -> Option<User> {
@@ -14,7 +11,7 @@ pub async fn create_user(client: &Arc<Client>, username: String, password: Strin
 
     let _ = client
         .put_item()
-        .table_name("users")
+        .table_name("Users")
         .item("username", username_av)
         .item("password_hash", password_hash_av)
         .send()
@@ -25,10 +22,10 @@ pub async fn create_user(client: &Arc<Client>, username: String, password: Strin
     });
 }
 
-pub async fn get_user_by_username(client: &Client, username: &str) -> Option<User> {
+pub async fn get_user_by_username(client: &Arc<Client>, username: String) -> Option<UserWithPassword> {
     let request = client
         .scan()
-        .table_name("users")
+        .table_name("Users")
         .filter_expression("username = :username")
         .expression_attribute_values(":username", AttributeValue::S(username.to_string()))
         .send()
@@ -40,8 +37,9 @@ pub async fn get_user_by_username(client: &Client, username: &str) -> Option<Use
                 if let Some(item) = items.first() {
                     let username = item.get("username")?.as_s().ok();
                     if let Some(username) = username {
-                        return Some(User {
+                        return Some(UserWithPassword {
                             username: username.to_string(),
+                            password_hash: get_user_password_hash(client, username).await?,
                         });
                     }
                 }
@@ -55,7 +53,7 @@ pub async fn get_user_by_username(client: &Client, username: &str) -> Option<Use
 pub async fn get_user_password_hash(client: &Client, username: &str) -> Option<String> {
     let request = client
         .scan()
-        .table_name("users")
+        .table_name("Users")
         .filter_expression("username = :username")
         .expression_attribute_values(":username", AttributeValue::S(username.to_string()))
         .send()

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-
 	import type { ActionData } from './$types';
 
 	export let form: ActionData;
@@ -9,22 +8,18 @@
 <div class="flex flex-col items-center justify-center mt-12">
 	<h1 class="text-2xl font-bold mb-6">Create an Account</h1>
 	<div class="w-full max-w-sm p-6 rounded-lg shadow-md border border-gray-300">
+		<p class="text-red-500">{form?.message ?? ""}</p>
 		<form class="w-full max-w-sm py-4" method="POST" use:enhance>
 			<input
-				id="form-signup.username"
+				id="username"
 				name="username"
-				type="text"
-				placeholder="Email"
-				class="border border-gray-300 p-2 rounded mb-4 w-full focus:outline-none focus:border-orange-400"
-			/>
-			<input
 				type="text"
 				placeholder="Username"
 				class="border border-gray-300 p-2 rounded mb-4 w-full focus:outline-none focus:border-orange-400"
 			/>
 			<input
-				id="form-signup.username"
-				name="username"
+				id="password"
+				name="password"
 				type="password"
 				placeholder="Password"
 				class="border border-gray-300 p-2 rounded mb-4 w-full focus:outline-none focus:border-orange-400"

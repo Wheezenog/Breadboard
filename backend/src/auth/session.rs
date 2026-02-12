@@ -1,8 +1,7 @@
-use crate::types::{Session, SessionValidationResult, SessionWithToken, User};
+use crate::types::{Session, SessionValidationResult, SessionWithToken};
 use aws_sdk_dynamodb::{Client, types::AttributeValue};
-use axum_extra::extract::cookie::{Cookie, Expiration};
 use sha2::{Digest, Sha256};
-use std::{collections::HashMap, time::SystemTime};
+use std::{collections::HashMap, sync::Arc, time::SystemTime};
 
 /// Generates a secure random string of 24 characters using the specified character set.
 pub fn generate_secure_random_string() -> String {
@@ -21,7 +20,7 @@ pub fn generate_secure_random_string() -> String {
 
 /// Creates a new session
 /// Returns the session with the token included
-pub async fn create_session(client: &Client, user_id: &str) -> Option<SessionWithToken> {
+pub async fn create_session(client: &Arc<Client>, username: String) -> Option<SessionWithToken> {
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards")
@@ -68,12 +67,15 @@ pub async fn create_session(client: &Client, user_id: &str) -> Option<SessionWit
     ]);
     let session_av = AttributeValue::M(session_map);
 
-    let key = HashMap::from([("uuid".to_string(), AttributeValue::S(user_id.to_string()))]);
+    let key = HashMap::from([(
+        "username".to_string(),
+        AttributeValue::S(username.to_string()),
+    )]);
 
     // Add session to db
     let _ = client
         .update_item()
-        .table_name("users")
+        .table_name("Users")
         .set_key(Some(key))
         .update_expression("SET session = :session")
         .expression_attribute_values(":session", session_av)
@@ -128,7 +130,7 @@ pub async fn get_session(client: &Client, session_id: &str) -> Option<Session> {
     // we need to look through the users table to find a user that has a "sessions" item, and that item has an "id" value that matches session_id
     let result = client
         .scan()
-        .table_name("users")
+        .table_name("Users")
         .filter_expression("contains(sessions, :session_id)")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()
@@ -191,7 +193,7 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
     // Similar to get_session, we need to find the user that has the session with the given ID, and then remove that session from the user's sessions
     let result = client
         .scan()
-        .table_name("users")
+        .table_name("Users")
         .filter_expression("contains(sessions, :session_id)")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()
@@ -211,7 +213,7 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
                                 )]);
                                 let _ = client
                                     .update_item()
-                                    .table_name("users")
+                                    .table_name("Users")
                                     .set_key(Some(key))
                                     .update_expression("REMOVE session")
                                     .send()
@@ -230,7 +232,7 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
 pub async fn get_user_from_session(client: &Client, session_id: &str) -> Option<String> {
     let result = client
         .scan()
-        .table_name("users")
+        .table_name("Users")
         .filter_expression("contains(sessions, :session_id)")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()

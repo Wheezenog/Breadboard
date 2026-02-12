@@ -4,6 +4,11 @@ pub struct User {
     pub username: String,
 }
 
+pub struct UserWithPassword {
+    pub username: String,
+    pub password_hash: String,
+}
+
 #[derive(Serialize)]
 pub struct Session {
     pub id: String,

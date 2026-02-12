@@ -2,15 +2,15 @@ import { type Actions, type RequestEvent, redirect, fail } from '@sveltejs/kit';
 import { setSessionTokenCookie } from '$lib/server/session';
 
 export const actions: Actions = {
-	default: register
+	default: login
 };
 
-async function register(event: RequestEvent) {
+async function login(event: RequestEvent) {
 	const formData = await event.request.formData();
 	const username = formData.get('username');
 	const password = formData.get('password');
 
-	let result = await event.fetch('http://localhost:3000/api/register', {
+	let result = await event.fetch('http://localhost:3000/api/login', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
@@ -25,7 +25,7 @@ async function register(event: RequestEvent) {
 		throw redirect(303, '/');
 	} else {
 		const error = await result.text();
-		console.error('Registration failed:', error);
+		console.error('Login failed:', error);
 
 		return fail(400, {
 			message: 'Invalid or missing fields',

@@ -20,5 +20,3 @@ pub fn verify_password(password: String, hash: String) -> bool {
         Err(_) => false,
     }
 }
-
-

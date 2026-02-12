@@ -1,6 +1,6 @@
+pub mod api;
 pub mod auth;
 pub mod types;
-pub mod api;
 
 use aws_config::{BehaviorVersion, load_defaults};
 use aws_sdk_dynamodb::Client;
@@ -10,7 +10,7 @@ use axum::{
         HeaderValue,
         header::{AUTHORIZATION, CONTENT_TYPE},
     },
-    routing::get,
+    routing::{get, post},
 };
 use std::sync::Arc;
 use tokio;
@@ -38,9 +38,9 @@ fn app(client: Arc<Client>) -> Router {
 
     Router::new()
         .route("/api", get(|| async { "Hello from the backend!" }))
-        .route(
-            "/api/validate-session",
-            get(api::session::validate_session).with_state(client).layer(cors_layer),
-        )
+        .route("/api/validate-session", get(api::session::validate_session))
+        .route("/api/register", post(api::user::register_user))
+        .route("/api/login", post(api::user::login_user))
+        .with_state(client)
+        .layer(cors_layer)
 }
-
