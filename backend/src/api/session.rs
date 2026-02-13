@@ -1,6 +1,6 @@
-use crate::auth::session::validate_session_token;
+use crate::{auth::session::validate_session_token, types::SessionValidationResult};
 use aws_sdk_dynamodb::Client;
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use std::sync::Arc;
 
 pub async fn validate_session(
@@ -8,10 +8,15 @@ pub async fn validate_session(
     Json(token): Json<String>,
 ) -> impl IntoResponse {
     match validate_session_token(&client, &token).await {
-        Some(result) => (StatusCode::OK, serde_json::to_string(&result).unwrap()),
-        None => (
-            StatusCode::UNAUTHORIZED,
-            "Invalid session token".to_string(),
-        ),
+        Some(result) => {
+            (StatusCode::OK, Json(result))
+        }
+        None => {
+            println!("Session validation failed");
+            (StatusCode::UNAUTHORIZED, SessionValidationResult {
+                session: None,
+                user: None,
+            }.into())
+        }
     }
 }

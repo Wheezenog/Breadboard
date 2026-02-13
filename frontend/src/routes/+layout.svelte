@@ -25,7 +25,7 @@
 		{:else}
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger
-					class="p-2 rounded-full hover:bg-orange-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600"
+					class="p-2 rounded-full hover:bg-orange-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 flex items-center gap-2 flex-row"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
 						<g fill="none" stroke="#fff" stroke-width="1.5">
@@ -40,7 +40,7 @@
 							/>
 						</g>
 					</svg>
-          <h6>{data.user?.username}</h6>
+          <h6 class="text-white">{data.user?.username}</h6>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Portal>
 					<DropdownMenu.Content
