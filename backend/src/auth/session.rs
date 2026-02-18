@@ -1,4 +1,4 @@
-use crate::types::{Session, SessionValidationResult, SessionWithToken};
+use crate::types::{Session, SessionValidationResult, SessionWithToken, User};
 use aws_sdk_dynamodb::{Client, types::AttributeValue};
 use sha2::{Digest, Sha256};
 use std::{collections::HashMap, sync::Arc, time::SystemTime};
@@ -101,16 +101,24 @@ pub async fn validate_session_token(
     let session_id = token_parts[0];
     let session_secret = token_parts[1];
 
-    let session = get_session(client, session_id).await;
+    let result = get_session(client, session_id).await;
 
-    if let Some(session) = session {
+    if let Some((user, session)) = result {
         let token_secret_hash = hash_secret(session_secret);
         let valid_secret = constant_time_eq(&token_secret_hash, &session.secret_hash);
 
         if valid_secret {
+            let session_with_token = SessionWithToken {
+                id: session.id,
+                secret_hash: session.secret_hash,
+                created_at: session.created_at,
+                expires_at: session.expires_at,
+                token: token.to_string(),
+            };
+
             return Some(SessionValidationResult {
-                session: Some(session),
-                user: get_user_from_session(client, session_id).await,
+                session: Some(session_with_token ),
+                user: Some(user),
             });
         } else {
             return None;
@@ -121,61 +129,65 @@ pub async fn validate_session_token(
 }
 
 /// Retrieves a session from the database by its ID
-pub async fn get_session(client: &Client, session_id: &str) -> Option<Session> {
+pub async fn get_session(client: &Client, session_id: &str) -> Option<(User, Session)> {
     // Query the database for the session with the given ID
     // the session is a map with key "session" held inside the user table
-    // we need to look through the users table to find a user that has a "sessions" item, and that item has an "id" value that matches session_id
+    // we need to look through the users table to find a user that has a "sessions" item, and that item has an "id" value that matches session_id'
+
+    let filter_expression = "#session.#id = :session_id".to_string();
+
     let result = client
         .scan()
         .table_name("Users")
-        .filter_expression("session.id = :session_id")
+        .filter_expression(filter_expression)
+        .expression_attribute_names("#session", "session")
+        .expression_attribute_names("#id", "id")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()
         .await;
 
     if let Ok(output) = result {
-        // Not errored
         if let Some(items) = output.items {
-            // Items exist
             for item in items {
                 if let Some(session_av) = item.get("session") {
                     if let AttributeValue::M(session_map) = session_av {
                         if let Some(AttributeValue::S(id)) = session_map.get("id") {
                             if id == session_id {
-                                // Found the session
-                                let secret_hash = if let Some(AttributeValue::S(secret_hash_str)) =
-                                    session_map.get("secret_hash")
-                                {
-                                    // Split returns a proper iterator of &str, so we can filter_map and collect into a Vec<u8>
-                                    // The has will not contain a comma, so the split will return an iterator with one element, which is the original string
-                                    secret_hash_str
-                                        .split(',')
-                                        .filter_map(|s| s.parse::<u8>().ok())
-                                        .collect()
-                                } else {
-                                    return None;
-                                };
-                                let created_at = if let Some(AttributeValue::N(created_at_str)) =
-                                    session_map.get("created_at")
-                                {
-                                    created_at_str.parse::<i64>().unwrap_or(0)
-                                } else {
-                                    0
-                                };
+                                // Found the session, now we need to return it as a Session struct
+                                let secret_hash_str = session_map
+                                    .get("secret_hash")
+                                    .and_then(|av| av.as_s().ok())?;
+                                let secret_hash = secret_hash_str
+                                    .split(',')
+                                    .filter_map(|s| s.parse::<u8>().ok())
+                                    .collect::<Vec<u8>>();
 
-                                let expires_at = if let Some(AttributeValue::N(expires_at_str)) =
-                                    session_map.get("expires_at")
-                                {
-                                    expires_at_str.parse::<i64>().unwrap_or(0)
-                                } else {
-                                    0
-                                };
-                                return Some(Session {
-                                    id: id.clone(),
-                                    secret_hash,
-                                    created_at,
-                                    expires_at,
-                                });
+                                let created_at = session_map
+                                    .get("created_at")
+                                    .and_then(|av| av.as_n().ok())?
+                                    .parse::<i64>()
+                                    .ok()?;
+
+                                let expires_at = session_map
+                                    .get("expires_at")
+                                    .and_then(|av| av.as_n().ok())?
+                                    .parse::<i64>()
+                                    .ok()?;
+
+                                let username =
+                                    item.get("username").and_then(|av| av.as_s().ok())?;
+
+                                return Some((
+                                    User {
+                                        username: username.clone(),
+                                    },
+                                    Session {
+                                        id: id.clone(),
+                                        secret_hash,
+                                        created_at,
+                                        expires_at,
+                                    },
+                                ));
                             }
                         }
                     }
@@ -188,10 +200,15 @@ pub async fn get_session(client: &Client, session_id: &str) -> Option<Session> {
 
 pub async fn delete_session(client: &Client, session_id: &str) -> bool {
     // Similar to get_session, we need to find the user that has the session with the given ID, and then remove that session from the user's sessions
+
+    let filter_expression = "#session.#id = :session_id".to_string();
+
     let result = client
         .scan()
         .table_name("Users")
-        .filter_expression("contains(sessions, :session_id)")
+        .filter_expression(filter_expression)
+        .expression_attribute_names("#session", "session")
+        .expression_attribute_names("#id", "id")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()
         .await;
@@ -205,8 +222,8 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
                             if id == session_id {
                                 // Found the session, now we need to remove it from the user's sessions
                                 let key = HashMap::from([(
-                                    "uuid".to_string(),
-                                    item.get("uuid").unwrap().clone(),
+                                    "username".to_string(),
+                                    item.get("username").unwrap().clone(),
                                 )]);
                                 let _ = client
                                     .update_item()
@@ -227,10 +244,14 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
 }
 
 pub async fn get_user_from_session(client: &Client, session_id: &str) -> Option<String> {
+    let filter_expression = "#session.#id = :session_id".to_string();
+
     let result = client
         .scan()
         .table_name("Users")
-        .filter_expression("contains(sessions, :session_id)")
+        .filter_expression(filter_expression)
+        .expression_attribute_names("#session", "session")
+        .expression_attribute_names("#id", "id")
         .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
         .send()
         .await;

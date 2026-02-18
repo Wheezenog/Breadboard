@@ -1,5 +1,6 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
     pub username: String,
 }
@@ -9,7 +10,7 @@ pub struct UserWithPassword {
     pub password_hash: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Session {
     pub id: String,
     pub secret_hash: Vec<u8>,
@@ -17,6 +18,7 @@ pub struct Session {
     pub expires_at: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SessionWithToken {
     pub id: String,
     pub secret_hash: Vec<u8>,
@@ -25,8 +27,8 @@ pub struct SessionWithToken {
     pub token: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SessionValidationResult {
-    pub session: Option<Session>,
-    pub user: Option<String>,
+    pub session: Option<SessionWithToken>,
+    pub user: Option<User>,
 }

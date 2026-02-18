@@ -1,4 +1,4 @@
-import {User, Session} from '$lib/server/types';
+import {User, Session} from '$lib/types';
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces

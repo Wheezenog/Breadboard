@@ -38,7 +38,7 @@ fn app(client: Arc<Client>) -> Router {
 
     Router::new()
         .route("/api", get(|| async { "Hello from the backend!" }))
-        .route("/api/validate-session", get(api::session::validate_session))
+        .route("/api/validate-session", post(api::session::validate_session))
         .route("/api/register", post(api::user::register_user))
         .route("/api/login", post(api::user::login_user))
         .with_state(client)
