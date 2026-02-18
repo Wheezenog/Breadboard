@@ -1,6 +1,8 @@
 <script lang="ts">
-	import data from '$lib/MockData.json';
 	import { Avatar } from 'bits-ui';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
 </script>
 
 <div class="flex flex-col items-center justify-center mt-8">
@@ -37,7 +39,7 @@
 				</div>
 			</div>
 			{#each { length: 5 }, i}
-				{#if i <= review.rating}
+				{#if i + 1 <= review.rating}
 					<span class="icon-[solar--star-bold] text-[#ffa500]"></span>
 				{:else}
 					<span class="icon-[solar--star-outline] text-[#ffa500]"></span>

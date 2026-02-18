@@ -2,9 +2,10 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { DropdownMenu } from 'bits-ui';
-	let loggedIn = false;
+	import type { LayoutProps } from './$types';
 
-	let { children } = $props();
+	let { data, children }: LayoutProps = $props();
+
 </script>
 
 <svelte:head>
@@ -17,7 +18,7 @@
 	>
 		<h1 class="text-3xl font-bold text-white hover:text-orange-200"><a href="/">BreadBoard</a></h1>
 
-		{#if !loggedIn}
+		{#if data.user == null}
 			<a href="/login" class="bg-white text-orange-400 px-4 py-2 rounded hover:bg-gray-100"
 				>Log In</a
 			>
@@ -39,6 +40,7 @@
 							/>
 						</g>
 					</svg>
+          <h6>{data.user?.username}</h6>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Portal>
 					<DropdownMenu.Content

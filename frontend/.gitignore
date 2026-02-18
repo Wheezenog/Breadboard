@@ -5,7 +5,7 @@
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
+/.svelte-kit/*
 /build
 
 # Vite
