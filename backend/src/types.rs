@@ -32,3 +32,13 @@ pub struct SessionValidationResult {
     pub session: Option<SessionWithToken>,
     pub user: Option<User>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Review {
+  id: i32,
+  title: String,
+  content: String,
+  rating: i32,
+  user: String,
+  location: String
+}
