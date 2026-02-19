@@ -93,23 +93,26 @@ pub async fn logout_user(
     State(client): State<Arc<Client>>,
     Json(token): Json<String>,
 ) -> impl IntoResponse {
+  println!("Logging out user");
     let token_parts: Vec<&str> = token.split('.').collect();
     if token_parts.len() != 2 {
+      println!("Token invalid twin");
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "Invalid token".to_string(),
+            Json("Logout failed, invalid token"),
         );
     }
 
     let session_id = token_parts[0];
 
-    let successful = auth::session::delete_session(&client, session_id).await;
-    if successful {
-        (StatusCode::OK, "Successful!!".to_string())
+    
+    if auth::session::delete_session(&client, session_id).await {
+      println!("Sucesfully logged out");
+        (StatusCode::OK, Json("Logout Success"))
     } else {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to logout".to_string(),
+            Json("Failed to log out user"),
         )
     }
 }

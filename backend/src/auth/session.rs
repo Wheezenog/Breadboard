@@ -234,10 +234,17 @@ pub async fn delete_session(client: &Client, session_id: &str) -> bool {
             .send()
             .await
         {
-            Ok(_) => return true,
-            Err(_) => return false,
+            Ok(_) => {
+                println!("Session Deletion successful");
+                return true;
+            }
+            Err(e) => {
+                println!("{e}");
+                return false;
+            }
         }
     } else {
+        println!("Failed to get user and session");
         return false;
     }
 }

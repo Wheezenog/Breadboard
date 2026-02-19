@@ -27,7 +27,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		});
 		
 		if (!response.ok) {
-			console.log('Session validation failed - invalid response');
 			deleteSessionTokenCookie(event);
 			event.locals.user = null;
 			event.locals.session = null;
@@ -35,11 +34,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 
 		const result = await response.json() as SessionValidationResult;
-
-    console.log('Session validation result:', result);
 		if (result.session && result.user) {
 
-      console.log('Valid session found for user:', result.user.username);
 			setSessionTokenCookie(event, result.session.token, new Date(Date.now() + 604800000));
       console.log('Session token cookie set with token:', result.session.token);
 			event.locals.session = result.session;

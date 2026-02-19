@@ -53,9 +53,10 @@
 							<span class="icon-[solar--user-linear]"></span>
 							<a href="/account">View Profile</a>
 						</DropdownMenu.Item>
-						<form method="POST" action="?/logout" class="flex items-center gap-2 hover:bg-gray-100 rounded-md px-2 py-1" use:enhance>
+						<form method="POST" action="?/logout" class="hover:bg-gray-100 rounded-md" use:enhance>
 							<button type="submit">
 								<DropdownMenu.Item
+                class="flex items-center gap-2 px-2 py-1 "
 								>
 									<span class="icon-[solar--logout-2-outline]"></span>Log Out
 								</DropdownMenu.Item>
