@@ -2,10 +2,10 @@
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { DropdownMenu } from 'bits-ui';
+	import { enhance } from '$app/forms';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
-
 </script>
 
 <svelte:head>
@@ -40,7 +40,7 @@
 							/>
 						</g>
 					</svg>
-          <h6 class="text-white">{data.user?.username}</h6>
+					<h6 class="text-white">{data.user?.username}</h6>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Portal>
 					<DropdownMenu.Content
@@ -53,10 +53,14 @@
 							<span class="icon-[solar--user-linear]"></span>
 							<a href="/account">View Profile</a>
 						</DropdownMenu.Item>
-						<DropdownMenu.Item
-							class="flex items-center gap-2 hover:bg-gray-100 rounded-md px-2 py-1"
-							><span class="icon-[solar--logout-2-outline]"></span>Log Out</DropdownMenu.Item
-						></DropdownMenu.Content
+						<form method="POST" action="?/logout" class="flex items-center gap-2 hover:bg-gray-100 rounded-md px-2 py-1" use:enhance>
+							<button type="submit">
+								<DropdownMenu.Item
+								>
+									<span class="icon-[solar--logout-2-outline]"></span>Log Out
+								</DropdownMenu.Item>
+							</button>
+						</form></DropdownMenu.Content
 					>
 				</DropdownMenu.Portal>
 			</DropdownMenu.Root>

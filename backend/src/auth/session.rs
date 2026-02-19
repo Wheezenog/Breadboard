@@ -117,7 +117,7 @@ pub async fn validate_session_token(
             };
 
             return Some(SessionValidationResult {
-                session: Some(session_with_token ),
+                session: Some(session_with_token),
                 user: Some(user),
             });
         } else {
@@ -199,82 +199,47 @@ pub async fn get_session(client: &Client, session_id: &str) -> Option<(User, Ses
 }
 
 pub async fn delete_session(client: &Client, session_id: &str) -> bool {
-    // Similar to get_session, we need to find the user that has the session with the given ID, and then remove that session from the user's sessions
+    let result = get_session(client, session_id).await;
 
-    let filter_expression = "#session.#id = :session_id".to_string();
+    if let Some((user, session)) = result {
+        let session_map = HashMap::from([
+            ("id".to_string(), AttributeValue::S(session.id)),
+            (
+                "secret_hash".to_string(),
+                AttributeValue::S(
+                    session
+                        .secret_hash
+                        .iter()
+                        .map(|b| b.to_string())
+                        .collect::<Vec<_>>()
+                        .join(","),
+                ),
+            ),
+            (
+                "created_at".to_string(),
+                AttributeValue::N(session.created_at.to_string()),
+            ),
+            (
+                "expires_at".to_string(),
+                AttributeValue::N(session.expires_at.to_string()),
+            ),
+        ]);
 
-    let result = client
-        .scan()
-        .table_name("Users")
-        .filter_expression(filter_expression)
-        .expression_attribute_names("#session", "session")
-        .expression_attribute_names("#id", "id")
-        .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
-        .send()
-        .await;
+        let session_av = AttributeValue::M(session_map);
 
-    if let Ok(output) = result {
-        if let Some(items) = output.items {
-            for item in items {
-                if let Some(session_av) = item.get("session") {
-                    if let AttributeValue::M(session_map) = session_av {
-                        if let Some(AttributeValue::S(id)) = session_map.get("id") {
-                            if id == session_id {
-                                // Found the session, now we need to remove it from the user's sessions
-                                let key = HashMap::from([(
-                                    "username".to_string(),
-                                    item.get("username").unwrap().clone(),
-                                )]);
-                                let _ = client
-                                    .update_item()
-                                    .table_name("Users")
-                                    .set_key(Some(key))
-                                    .update_expression("REMOVE session")
-                                    .send()
-                                    .await;
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
+        match client
+            .delete_item()
+            .table_name("Users")
+            .key(user.username, session_av)
+            .send()
+            .await
+        {
+            Ok(_) => return true,
+            Err(_) => return false,
         }
+    } else {
+        return false;
     }
-    false
-}
-
-pub async fn get_user_from_session(client: &Client, session_id: &str) -> Option<String> {
-    let filter_expression = "#session.#id = :session_id".to_string();
-
-    let result = client
-        .scan()
-        .table_name("Users")
-        .filter_expression(filter_expression)
-        .expression_attribute_names("#session", "session")
-        .expression_attribute_names("#id", "id")
-        .expression_attribute_values(":session_id", AttributeValue::S(session_id.to_string()))
-        .send()
-        .await;
-
-    if let Ok(output) = result {
-        if let Some(items) = output.items {
-            for item in items {
-                if let Some(session_av) = item.get("session") {
-                    if let AttributeValue::M(session_map) = session_av {
-                        if let Some(AttributeValue::S(id)) = session_map.get("id") {
-                            if id == session_id {
-                                // Found the session, now we need to return the user's username
-                                if let Some(AttributeValue::S(username)) = item.get("username") {
-                                    return Some(username.clone());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    None
 }
 
 /// Constant time comparison of two byte slices to prevent timing attacks

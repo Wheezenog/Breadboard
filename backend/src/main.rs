@@ -41,6 +41,7 @@ fn app(client: Arc<Client>) -> Router {
         .route("/api/validate-session", post(api::session::validate_session))
         .route("/api/register", post(api::user::register_user))
         .route("/api/login", post(api::user::login_user))
+        .route("/api/logout", post(api::user::logout_user))
         .with_state(client)
         .layer(cors_layer)
 }

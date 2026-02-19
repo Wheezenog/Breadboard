@@ -1,4 +1,5 @@
 use crate::auth::{
+    self,
     password::hash_password,
     session::create_session,
     user::{create_user, get_user_by_username},
@@ -13,6 +14,7 @@ pub struct UserRequest {
     username: String,
     password: String,
 }
+
 
 #[axum::debug_handler]
 pub async fn register_user(
@@ -85,4 +87,29 @@ pub async fn login_user(
         StatusCode::UNAUTHORIZED,
         "Invalid username or password".to_string(),
     )
+}
+
+pub async fn logout_user(
+    State(client): State<Arc<Client>>,
+    Json(token): Json<String>,
+) -> impl IntoResponse {
+    let token_parts: Vec<&str> = token.split('.').collect();
+    if token_parts.len() != 2 {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid token".to_string(),
+        );
+    }
+
+    let session_id = token_parts[0];
+
+    let successful = auth::session::delete_session(&client, session_id).await;
+    if successful {
+        (StatusCode::OK, "Successful!!".to_string())
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to logout".to_string(),
+        )
+    }
 }
