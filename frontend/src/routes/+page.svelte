@@ -29,7 +29,7 @@
 					</div>
 				</Avatar.Root>
 				<div class="flex flex-col items-start">
-					<p class="text-base">{data.users.find((u) => u.id === review.user_id)?.username}</p>
+					<p class="text-base">{review.user}</p>
 					<div class="flex items-center flex-row py-2 gap-1">
 						<span class="icon-[solar--map-point-bold] mr-1 text-xs"></span>
 						<p class="text-xs">

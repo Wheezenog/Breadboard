@@ -35,10 +35,10 @@ pub struct SessionValidationResult {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Review {
-  id: i32,
-  title: String,
-  content: String,
-  rating: i32,
-  user: String,
-  location: String
+  pub id: i32,
+  pub title: String,
+  pub content: String,
+  pub rating: i32,
+  pub user: String,
+  pub location: String
 }
